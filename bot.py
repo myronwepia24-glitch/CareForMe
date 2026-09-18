@@ -1,58 +1,34 @@
-import os
-import json
-import logging
-import asyncio
-from aiohttp import web
-from telegram import Update, WebAppInfo, InlineKeyboardButton, InlineKeyboardMarkup
+import json, logging, os
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
-logging.basicConfig(level=logging.INFO)
-
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-WEB_APP_URL = "https://your-username.github.io/careforme-bot"
-user_memories = {}
-
-ROLEPLAY_PROMPT = """You are CareForMe, an attentive roleplay companion.
-Rules:
-1. Stay in character continuously.
-2. Use asterisks for actions (*smiles*).
-3. Plain text for dialogue."""
+WEB_APP_URL = "https://YOUR-GITHUB-USERNAME.github.io/YOUR-REPO-NAME/"
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = InlineKeyboardMarkup([
-        [InlineKeyboardButton("Open CareForMe 🎭", web_app=WebAppInfo(url=WEB_APP_URL))]
-    ])
-    await update.message.reply_text("Welcome to CareForMe!", reply_markup=keyboard)
+    # Keyboard button is required for tg.sendData() to send messages back
+    keyboard = [[KeyboardButton(text="🎭 Open CareForMe", web_app=WebAppInfo(url=WEB_APP_URL))]]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    
+    await update.message.reply_text(
+        "Welcome to CareForMe! Tap the button below to choose your AI persona:",
+        reply_markup=reply_markup
+    )
 
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    reply = "*listens closely*\nI'm right here with you."
-    await update.message.reply_text(reply)
+# Handle selection from the Mini App
+async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    data = json.loads(update.effective_message.web_app_data.data)
+    persona = data.get("persona", "Companion")
+    
+    await update.message.reply_text(
+        f"*smiles softly*\n\nI am now configured as your **{persona}**. How can I care for you today?"
+    )
 
-# Dummy web server to satisfy Render's Free Web Service requirement
-async def handle_ping(request):
-    return web.Response(text="CareForMe Bot is running 24/7!")
-
-async def main():
-    # Setup Telegram Application
+def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    # Setup dummy Web Server for Render
-    server = web.Application()
-    server.router.add_get("/", handle_ping)
-    runner = web.AppRunner(server)
-    await runner.setup()
-    port = int(os.environ.get("PORT", 10000))
-    site = web.TCPSite(runner, "0.0.0.0", port)
-    
-    await site.start()
-    await app.initialize()
-    await app.start()
-    await app.updater.start_polling(drop_pending_updates=True)
-    
-    # Keep running forever
-    await asyncio.Event().wait()
+    app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data_handler))
+    app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
