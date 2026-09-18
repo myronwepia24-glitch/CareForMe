@@ -3,54 +3,61 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CareForMe Configurator</title>
+  <title>CareForMe Roster</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
-    body { font-family: -apple-system, sans-serif; background: #1c1c1e; color: white; padding: 16px; margin: 0; }
-    h2, h3 { margin-top: 0; }
-    .card { background: #2c2c2e; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-    label { font-size: 14px; color: #aaa; display: block; margin-top: 8px; }
-    select, button { width: 100%; padding: 12px; border-radius: 8px; border: none; margin-top: 6px; font-size: 16px; }
-    select { background: #3a3a3c; color: white; }
-    button { background: #007aff; color: white; font-weight: bold; margin-top: 16px; cursor: pointer; }
+    body { font-family: -apple-system, sans-serif; background: #0f0f12; color: #fff; margin: 0; padding: 12px; }
+    h2 { text-align: center; color: #a855f7; }
+    .search-box { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #1e1e24; color: #fff; margin-bottom: 16px; box-sizing: border-box; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .card { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 8px; text-align: center; }
+    .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 8px; }
+    .card h3 { margin: 8px 0 4px; font-size: 14px; }
+    .btn { background: #8b5cf6; color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; width: 100%; cursor: pointer; }
+    .custom-sec { margin-top: 20px; background: #18181b; padding: 12px; border-radius: 12px; }
+    .custom-sec input, .custom-sec textarea { width: 100%; padding: 8px; margin: 4px 0 12px; background: #27272a; border: none; color: #fff; border-radius: 6px; box-sizing: border-box; }
   </style>
 </head>
 <body>
-  <h2>CareForMe Setup</h2>
+  <h2>Character Roster</h2>
+  <input type="text" class="search-box" placeholder="Search..." onkeyup="filterCards(this.value)">
 
-  <div class="card">
-    <h3>1. Select Character Persona</h3>
-    <select id="persona">
-      <option value="Caring Listener">❤️ Caring Listener (Warm, attentive, gentle)</option>
-      <option value="Adventure Companion">⚔️ Adventure Companion (Bold, energetic, narrative-driven)</option>
-      <option value="Wise Mentor">📖 Wise Mentor (Thoughtful, reflective, guiding)</option>
-      <option value="Playful Bestie">✨ Playful Bestie (Witty, energetic, supportive)</option>
-    </select>
-
-    <h3>2. Set Initial Mood</h3>
-    <select id="mood">
-      <option value="Comforting & Calm">Comforting & Calm</option>
-      <option value="Cheerful & Upbeat">Cheerful & Upbeat</option>
-      <option value="Deep & Reflective">Deep & Reflective</option>
-    </select>
+  <div class="grid" id="character-grid">
+    <div class="card" data-name="Kage">
+      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Kage" alt="Kage">
+      <h3>Kage</h3>
+      <button class="btn" onclick="selectPersona('Kage', 'You are Kage, a serious and vigilant character.')">Chat</button>
+    </div>
   </div>
 
-  <button onclick="applySettings()">Apply Persona & Start Chat</button>
+  <div class="custom-sec">
+    <h3>Custom Character Setup</h3>
+    <input type="text" id="cust-name" placeholder="Name">
+    <textarea id="cust-prompt" rows="3" placeholder="Define character behavior and details..."></textarea>
+    <button class="btn" style="background:#10b981;" onclick="submitCustom()">Launch Character</button>
+  </div>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    function applySettings() {
-      const persona = document.getElementById('persona').value;
-      const mood = document.getElementById('mood').value;
-
-      tg.sendData(JSON.stringify({
-        action: "set_profile",
-        persona: persona,
-        mood: mood
-      }));
+    function selectPersona(name, prompt) {
+      tg.sendData(JSON.stringify({ action: "set_profile", persona: name, system_prompt: prompt }));
       tg.close();
+    }
+
+    function submitCustom() {
+      const name = document.getElementById('cust-name').value;
+      const prompt = document.getElementById('cust-prompt').value;
+      if (!name || !prompt) return alert("Please fill both fields.");
+      selectPersona(name, prompt);
+    }
+
+    function filterCards(query) {
+      document.querySelectorAll('.card').forEach(card => {
+        const name = card.getAttribute('data-name').toLowerCase();
+        card.style.display = name.includes(query.toLowerCase()) ? 'block' : 'none';
+      });
     }
   </script>
 </body>
