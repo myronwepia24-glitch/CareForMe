@@ -3,36 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CareForMe Companion</title>
+  <title>CareForMe Configurator</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     body { font-family: -apple-system, sans-serif; background: #1c1c1e; color: white; padding: 16px; margin: 0; }
-    h2 { margin-top: 0; }
+    h2, h3 { margin-top: 0; }
     .card { background: #2c2c2e; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-    button { background: #007aff; color: white; border: none; padding: 12px 16px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 16px; cursor: pointer; }
+    label { font-size: 14px; color: #aaa; display: block; margin-top: 8px; }
+    select, button { width: 100%; padding: 12px; border-radius: 8px; border: none; margin-top: 6px; font-size: 16px; }
+    select { background: #3a3a3c; color: white; }
+    button { background: #007aff; color: white; font-weight: bold; margin-top: 16px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h2>Choose Persona</h2>
-  
-  <div class="card">
-    <h3>Caring Friend</h3>
-    <p>A warm, attentive listener ready to talk about your day.</p>
-    <button onclick="selectPersona('Caring Friend')">Select</button>
-  </div>
+  <h2>CareForMe Setup</h2>
 
   <div class="card">
-    <h3>Adventure Companion</h3>
-    <p>A bold, imaginative partner for deep roleplay scenarios.</p>
-    <button onclick="selectPersona('Adventure Companion')">Select</button>
+    <h3>1. Select Character Persona</h3>
+    <select id="persona">
+      <option value="Caring Listener">❤️ Caring Listener (Warm, attentive, gentle)</option>
+      <option value="Adventure Companion">⚔️ Adventure Companion (Bold, energetic, narrative-driven)</option>
+      <option value="Wise Mentor">📖 Wise Mentor (Thoughtful, reflective, guiding)</option>
+      <option value="Playful Bestie">✨ Playful Bestie (Witty, energetic, supportive)</option>
+    </select>
+
+    <h3>2. Set Initial Mood</h3>
+    <select id="mood">
+      <option value="Comforting & Calm">Comforting & Calm</option>
+      <option value="Cheerful & Upbeat">Cheerful & Upbeat</option>
+      <option value="Deep & Reflective">Deep & Reflective</option>
+    </select>
   </div>
+
+  <button onclick="applySettings()">Apply Persona & Start Chat</button>
 
   <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    function selectPersona(persona) {
-      tg.sendData(JSON.stringify({ action: "set_persona", persona: persona }));
+    function applySettings() {
+      const persona = document.getElementById('persona').value;
+      const mood = document.getElementById('mood').value;
+
+      tg.sendData(JSON.stringify({
+        action: "set_profile",
+        persona: persona,
+        mood: mood
+      }));
       tg.close();
     }
   </script>
