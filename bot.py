@@ -1,33 +1,30 @@
 import json
 import logging
 import os
-from telegram import Update, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+import asyncio
+from aiohttp import web
+from telegram import Update, KeyboardButton, ReplyKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
 TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-# Make sure to replace this URL with your actual GitHub Pages link!
 WEB_APP_URL = "https://YOUR-GITHUB-USERNAME.github.io/YOUR-REPO-NAME/"
 
-# In-memory storage for user persona settings
 user_profiles = {}
 
+# 1. Dummy HTTP Server for Render Port Binding
+async def handle_ping(request):
+    return web.Response(text="CareForMe Bot is running 24/7!")
+
+# 2. Telegram Bot Handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # KeyboardButton with web_app is required for tg.sendData() to work
     keyboard = [[KeyboardButton(text="🎭 Open CareForMe App", web_app={"url": WEB_APP_URL})]]
     reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
-    
     await update.message.reply_text(
         "Welcome to **CareForMe**!\n\n"
         "Tap the button below at the bottom of your screen to choose your character persona and mood.",
         reply_markup=reply_markup,
         parse_mode="Markdown"
     )
-
-async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    chat_id = update.effective_chat.id
-    if chat_id in user_profiles:
-        del user_profiles[chat_id]
-    await update.message.reply_text("*resets conversation context and memory back to clean state*")
 
 async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
@@ -36,36 +33,44 @@ async def web_app_data_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     
     persona = data.get("persona", "Caring Listener")
     mood = data.get("mood", "Comforting & Calm")
-    
-    # Store settings for user session
     user_profiles[chat_id] = {"persona": persona, "mood": mood}
 
-    reply = (
-        f"*adjusts tone smoothly*\n\n"
-        f"I am now configured as your **{persona}** with a **{mood}** mood.\n"
-        f"How are you feeling right now?"
-    )
+    reply = f"*adjusts tone smoothly*\n\nI am now configured as your **{persona}** with a **{mood}** mood."
     await update.message.reply_text(reply, parse_mode="Markdown")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     profile = user_profiles.get(chat_id, {"persona": "Caring Listener", "mood": "Comforting"})
-    
     user_text = update.message.text
     persona = profile['persona']
     
-    # Context-aware roleplay response template
-    response = f"*{persona} listens attentively to '{user_text}'*\n\nI am right here with you. Let me know what else is on your mind."
+    response = f"*{persona} listens attentively to '{user_text}'*\n\nI am right here with you. Tell me more."
     await update.message.reply_text(response)
 
-def main():
+# 3. Main Function binding both Web Server & Telegram Bot
+async def main():
+    # Configure Telegram Application
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("reset", reset))
     app.add_handler(MessageHandler(filters.StatusUpdate.WEB_APP_DATA, web_app_data_handler))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    # Configure Web Server to bind to Render's port
+    server = web.Application()
+    server.router.add_get("/", handle_ping)
+    runner = web.AppRunner(server)
+    await runner.setup()
     
-    app.run_polling()
+    port = int(os.environ.get("PORT", 10000))
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    
+    await site.start()
+    await app.initialize()
+    await app.start()
+    await app.updater.start_polling(drop_pending_updates=True)
+    
+    # Keep the service running
+    await asyncio.Event().wait()
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
