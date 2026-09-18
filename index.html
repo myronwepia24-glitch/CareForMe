@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareForMe Companion</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: -apple-system, sans-serif; background: #1c1c1e; color: white; padding: 16px; margin: 0; }
+    h2 { margin-top: 0; }
+    .card { background: #2c2c2e; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+    button { background: #007aff; color: white; border: none; padding: 12px 16px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 16px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Choose Persona</h2>
+  
+  <div class="card">
+    <h3>Caring Friend</h3>
+    <p>A warm, attentive listener ready to talk about your day.</p>
+    <button onclick="selectPersona('Caring Friend')">Select</button>
+  </div>
+
+  <div class="card">
+    <h3>Adventure Companion</h3>
+    <p>A bold, imaginative partner for deep roleplay scenarios.</p>
+    <button onclick="selectPersona('Adventure Companion')">Select</button>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    function selectPersona(persona) {
+      tg.sendData(JSON.stringify({ action: "set_persona", persona: persona }));
+      tg.close();
+    }
+  </script>
+</body>
+</html>
